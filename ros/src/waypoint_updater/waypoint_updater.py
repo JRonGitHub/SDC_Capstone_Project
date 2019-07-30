@@ -31,7 +31,7 @@ class WaypointUpdater(object):
         self.traffic_waypoint = -1
         self.stop = 0
 
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(50)
         while not rospy.is_shutdown():
             self.update()
             rate.sleep()

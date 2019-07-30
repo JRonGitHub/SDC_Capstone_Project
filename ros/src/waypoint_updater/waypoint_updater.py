@@ -4,7 +4,7 @@ import rospy
 import math
 import numpy as np
 import tf
-
+from scipy.spatial import KDTree
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32, Float32
@@ -41,6 +41,9 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints): 
         self.base_waypoints = waypoints
+        if not self.waypoints_2d:
+            self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg): 
         self.traffic_waypoint = msg.data
@@ -56,37 +59,27 @@ class WaypointUpdater(object):
         self.check_for_traffic_lights(next_wp)
         self.determine_final_waypoints(next_wp)
         self.publish_message()
-        
-    def get_angle(self, next_wp):
-        next_position = self.base_waypoints.waypoints[next_wp].pose.pose.position
-        current_position = self.current_pose.pose.position
-        current_orientation = self.current_pose.pose.orientation
-
-        direction = math.atan2((next_position.y - current_position.y), (next_position.x - current_position.x))
-        theta = tf.transformations.euler_from_quaternion([current_orientation.x, current_orientation.y, current_orientation.z, current_orientation.w])[-1]
-        angle = math.fabs(theta - direction)
-        
-        return angle
 
     def get_next_waypoint(self):
 
-        min_dist = math.inf
-        next_wp = 0
-        dl = lambda a, b: math.sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2))
-        
-        for i in range(len(self.base_waypoints.waypoints)):
-            dist = dl(self.current_pose.pose.position, self.base_waypoints.waypoints[i].pose.pose.position)
-            if dist < min_dist:
-                min_dist = dist
-                next_wp = i     
-        
-        final_wp = next_wp
-        
-        angle = self.get_angle(next_wp)
-        if angle > math.pi / 4.0:
-            final_wp = next_wp + 1
-        
-        return final_wp
+        x = self.current_pose.pose.position.x
+        y = self.current_pose.pose.position.y
+        closest_wp = self.waypoint_tree.query([x,y], 1)[1]
+
+        #Check if closest is ahead or behind vehicle
+        closest_coord = self.waypoints_2d[closest_wp]
+        prev_coord = self.waypoints_2d[closest_wp-1]
+
+        #Equation for hyperplane through closest_coords
+        cl_vect = np.array(closest_coord)
+        prev_vect = np.array(prev_coord)
+        pos_vect = np.array([x, y])
+
+        val = np.dot(cl_vect-prev_vect, pos_vect-cl_vect)
+
+        if val > 0:
+            closest_wp = (closest_wp + 1) % len(self.waypoints_2d)
+        return closest_wp
 
     def check_for_traffic_lights(self, next_wp):
         if self.stop == 1:

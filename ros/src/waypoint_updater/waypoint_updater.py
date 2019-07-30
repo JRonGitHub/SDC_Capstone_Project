@@ -70,7 +70,7 @@ class WaypointUpdater(object):
 
     def get_next_waypoint(self):
 
-        min_dist = 1000000.0
+        min_dist = math.inf
         next_wp = 0
         dl = lambda a, b: math.sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2))
         

@@ -1,0 +1,9 @@
+This model is trained on a relatively small but very balanced, (handpicked) dataset from mainly 3 different datasets:
+
+LARA dataset from trafficlights in France
+Bosch dataset from trafficlights in California
+Udacity Simulator and Lot datasets
+
+Each has more or less a third of the training data here, the lot dataset was artificially inflated, by flipping images (and labels of course as well)
+
+The graph works pretty good on the test video in the Capstone Object Detection Workspace, even captures traffic light before I consciously saw it at the right spot. However it also sees a few traffic lights that aren't there (not a lot, but it happened).

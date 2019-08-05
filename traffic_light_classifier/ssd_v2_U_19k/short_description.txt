@@ -1,0 +1,6 @@
+This is the ssd_v2_coco_inception model trained 19300 steps 
+on the data that is only using simulator and lot labeled data
+
+(relatively small dataset)
+
+results were better on various images, for the lot data especially, however the simulator video output is disappointing
